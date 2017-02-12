@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="//cdn.bootcss.com/vue/2.1.10/vue.min.js"></script>
+    <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.js"></script>
+    <script src="//cdn.bootcss.com/blueimp-md5/2.6.0/js/md5.min.js"></script>
+    <script src="../static/markdown.js"></script>
+    <link href="//cdn.bootcss.com/minireset.css/0.0.2/minireset.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/github-markdown.css">
+    <link rel="Shortcut Icon" href="../static/favicon.ico">
+    <title>Login</title>
+    <style>
+        * {
+            font-family: "Microsoft YaHei";
+        }
+
+        body {
+            background-color: #e8e8e8;
+        }
+
+        #container {
+            margin: 40px auto;
+            max-width: 600px;
+        }
+
+        #container #welcome {
+            text-align: center;
+        }
+
+        #showStatus {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 20px;
+            margin-left: 20px;
+            max-height: 34px;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <h1 id="welcome">欢迎登陆Shakespeare</h1>
+    <div class="panel panel-default" id="login">
+        <div class="panel-body">
+            <form>
+                <div class="form-group">
+                    <label for="exampleInputEmail1">用户名：</label>
+                    <input type="text" class="form-control" id="user" v-model="user">
+                </div>
+                <div class="form-group">
+                    <label for="exampleInputPassword1">密码：</label>
+                    <input type="password" class="form-control" id="password" v-model="password">
+                </div>
+                <button type="submit" class="btn btn-default" v-on:click.prevent="do_login">登陆</button>
+                <div class="alert alert-danger" role="alert" v-text="loginStatus" id="showStatus"
+                     v-bind:style="{visibility:visibility}"></div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+<script>
+    let login = new Vue({
+        el: "#login",
+        data: {
+            user: "",
+            password: "",
+            loginStatus: "测试状态",
+            visibility: "hidden"
+        },
+        methods: {
+            do_login: function () {
+                let data = JSON.stringify([login.user, md5(login.password)]);
+                console.log(data);
+                $.ajax({
+                    url: "../API/login/",
+                    type: "POST",
+                    data: data,
+                    success: function (result) {
+                        result = JSON.parse(result);
+                        if (result.status == "success") {
+                            window.location.href = result.site;
+                            login.loginStatus = "成功登陆，正在为您跳转";
+                            login.visibility = "visible";
+                        } else if (result.status == "fail") {
+                            login.loginStatus = "登陆失败，请检查用户名以及密码是否正确。";
+                            login.visibility = "visible";
+                        }
+                    }
+                })
+            }
+        }
+    })
+</script>
+</html>

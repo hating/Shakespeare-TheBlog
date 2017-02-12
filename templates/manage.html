@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="//cdn.bootcss.com/vue/2.1.10/vue.min.js"></script>
+    <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.js"></script>
+    <script src="../static/markdown.js"></script>
+    <link href="//cdn.bootcss.com/minireset.css/0.0.2/minireset.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/github-markdown.css">
+    <link rel="Shortcut Icon" href="../static/favicon.ico">
+    <style>
+        * {
+            font-family: "Microsoft YaHei";
+        }
+
+        body {
+            background-color: #e8e8e8;
+        }
+
+        #outerPanel {
+            max-width: 1200px;
+            min-height: 800px;
+            margin: 40px auto;
+            display: flex;
+        }
+
+        #outerPanel #nav {
+            background: #b896ab;
+            min-width: 300px;
+        }
+
+        #outerPanel #func {
+            background-color: #cbbdb3;
+            min-width: 900px;
+        }
+
+        #welcome {
+            text-align: center;
+        }
+
+        #outerPanel #submit {
+            float: right;
+            margin-top: 6px;
+        }
+
+        #outerPanel #fun2body {
+            min-height: 740px;
+            max-height: 1200px;
+            overflow-y: auto;
+        }
+
+        #articleList * {
+            line-height: 32px;
+        }
+
+        #func2 #apply {
+            float: right;
+        }
+
+        #showStatus {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 20px;
+            margin-left: 20px;
+            max-height: 34px;
+        }
+    </style>
+    <title>管理页面</title>
+
+</head>
+<body>
+{% raw %}
+<div id="welcome"><h1>欢迎来到Shakespeare管理系统</h1></div>
+<div class="panel panel-default" id="outerPanel">
+
+    <div class="panel-body" id="nav">
+        <div class="list-group">
+            <a href="#" class="list-group-item active" v-on:click="add" id="add">新增文章</a>
+            <a href="#" class="list-group-item" v-on:click="manage" id="manage">文章状态管理</a>
+        </div>
+    </div>
+    <div class="panel-body" id="func">
+        <div id="func1">
+            <textarea class="form-control" rows="36" placeholder="在这里输入Markdown格式的文章" v-model="content"></textarea>
+            <div class="alert alert-danger" role="alert" v-text="loginStatus" id="showStatus"
+                 v-bind:style="{visibility:visibility}"></div>
+            <button type="button" class="btn btn-success" id="submit" v-on:click="submit">提交</button>
+        </div>
+        <div id="func2">
+            <div class="panel panel-default">
+                <div class="panel-body" id="fun2body">
+                    <table class="table table-hover table-striped" id="articleList">
+                        <tr>
+                            <th>ID</th>
+                            <th>文章标题</th>
+                            <th>发表日期</th>
+                            <th>文章状态</th>
+                            <th>修改状态</th>
+                        </tr>
+
+                        <!--Interesting.
+                        <tr v-for="item in manage">-->
+                        <!--<div>{{ item }}</div>-->
+                        <!--</tr>-->
+
+                        <tr v-for="item in manage">
+                            <td>{{ item.id }}</td>
+                            <td><a v-bind:href="item.link" target="_blank">{{ item.title }}</a></td>
+                            <td>{{ item.pubTime }}</td>
+                            <td>{{ item.statusText }}</td>
+                            <td><select class="form-control" v-model="item.toStatus">
+                                <option value="0">移为草稿</option>
+                                <option value="1">发表文章</option>
+                                <option value="2">取消发表</option>
+                                <option value="3">特殊用途</option>
+                                <option value="4">直接删除</option>
+                            </select></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <button type="button" class="btn btn-success" id="apply" v-on:click="applyChange">应用</button>
+        </div>
+    </div>
+</div>
+</body>
+{% endraw %}
+<script>
+    $("#func2").hide();
+    let reload = function () {
+        $.ajax({
+            url: "../API/articleManage/",
+            type: "GET",
+            success: function (result) {
+                result = JSON.parse(result);
+                while (func2.manage.length != 0) {
+                    func2.manage.shift()
+                }
+                for (let i of result) {
+                    i.toStatus = i.status;
+                    if (i.status == 0) {
+                        i.statusText = "已存到草稿箱";
+                    } else if (i.status == 1) {
+                        i.statusText = "已发布";
+                    } else if (i.status == 2) {
+                        i.statusText = "已取消发布";
+                    } else if (i.status == 3) {
+                        i.statusText = "特殊用途";
+                    } else {
+                        i.statusText = "未知状态"
+                    }
+                    func2.manage.push(i);
+                }
+                console.log("RELOADED");
+            }
+        })
+    };
+    let nav = new Vue({
+        el: "#nav",
+        methods: {
+            add: function () {
+                $("#func2").hide();
+                $("#func1").show();
+                $("#add").addClass("active");
+                $("#manage").removeClass("active");
+            },
+            manage: function () {
+                $("#func1").hide();
+                $("#func2").show();
+                $("#add").removeClass("active");
+                $("#manage").addClass("active");
+            }
+        }
+    });
+    let func1 = new Vue({
+        el: "#func1",
+        data: {
+            content: "",
+            loginStatus: "测试状态",
+            visibility: "hidden"
+        },
+        methods: {
+            submit: function () {
+                tree = markdown.parse(func1.content);
+                let title = "无标题";
+                for (let i of tree) {
+                    if (i[0] == "header") {
+                        title = i[2];
+                        break;
+                    }
+                }
+                let data = {
+                    title: title,
+                    content: func1.content
+                };
+                $.ajax({
+                    url: "../API/addArticle/",
+                    method: "POST",
+                    data: JSON.stringify(data),
+                    success: function (result) {
+                        result = JSON.parse(result);
+                        console.log(result);
+                        func1.loginStatus = "成功添加文章到草稿箱，请到文章状态管理将其发布。";
+                        func1.visibility = "visible";
+                        setTimeout(function () {
+                            func1.visibility = "hidden";
+                        }, 6000);
+                        func1.content = "";
+                        reload();
+                    }
+                })
+            }
+        }
+    });
+    let func2 = new Vue({
+        el: "#func2",
+        data: {
+            manage: [{
+                "id": "未知ID",
+                "title": "未知标题",
+                "link": "./index.html",
+                "pubTime": "未知",
+                "status": -1,
+                "statusText": "未知状态",
+                "toStatus": -1,
+            },
+            ],
+        },
+        methods: {
+            applyChange: function () {
+                console.log("HRER");
+                for (let i of func2.manage) {
+                    if (i.status != i.toStatus) {
+                        $.ajax({
+                            url: "../API/change/",
+                            type: "POST",
+                            data: JSON.stringify([i.id, i.toStatus]),
+                            success: function (result) {
+                                result = JSON.parse(result);
+                                console.log(result);
+                                reload();
+                            }
+                        })
+                    }
+                }
+
+            }
+        }
+    });
+    reload();
+</script>
+</html>

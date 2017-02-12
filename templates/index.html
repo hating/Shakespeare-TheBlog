@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shakespeare - The blog</title>
+    <script src="//cdn.bootcss.com/vue/2.1.10/vue.min.js"></script>
+    <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.js"></script>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/minireset.css/0.0.2/minireset.css" rel="stylesheet">
+    <script src="../static/markdown.js"></script>
+    <link rel="stylesheet" href="./static/github-markdown.css">
+    <link rel="Shortcut Icon" href="../static/favicon.ico">
+    <style>
+        * {
+            font-family: "Microsoft YaHei";
+        }
+
+        body {
+            background-color: #e8e8e8;
+        }
+
+        #header {
+            min-height: 350px;
+            background: url("../static/bg.jpg") no-repeat center;
+            background-color: #5c4d4c;
+        }
+
+        #top {
+            color: #fff;
+            /*background-color: #4183C4;*/
+            max-width: 1052px;
+            position: relative;
+            top: 90px;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        #top #about {
+            position: absolute;
+            right: 20px;
+            top: -80px;
+        }
+
+        #top #about a {
+            color: #ffffff;
+        }
+
+        #top #headtitle {
+            font-size: 90px;
+
+        }
+
+        #top #headtext {
+            font-size: 40px;
+            line-height: 60px;
+        }
+
+        #top #search {
+            min-width: 560px;
+            min-height: 50px;
+            color: #321c3c;
+            font-size: 20px;
+        }
+
+        #content {
+            max-width: 1052px;
+            margin: 20px auto;
+            /*background-color: #d6d6d6;*/
+        }
+
+        #content .article {
+            margin-bottom: 5px;
+            min-height: 40px;
+            max-height: 800px;
+            overflow:auto;
+        }
+
+        #content a:hover {
+{#            background-color: #b392a7;#}
+        }
+
+    </style>
+</head>
+<body>
+<div id="header">
+    <div id="top">
+        <div id="description">
+            <div id="about"><a href="https://github.com/hating/" target="_blank">关于作者</a></div>
+            <h1 id="headtitle">Shakespeare</h1>
+            <p id="headtext">Write and explode.</p>
+        </div>
+        <input type="text" placeholder="请输入要检索的文字，支持Markdown语法" id="search" v-model="keyword" v-on:keyup="search">
+    </div>
+</div>
+<div id="content">
+    <div class="list-group ">
+        <a v-bind:href="item.href" class="list-group-item article" title="查看全文" v-for="item in articles">
+            <div v-html="item.content" class="markdown-body"></div>
+        </a>
+    </div>
+</div>
+</body>
+<script>
+    let loadarticles = [];
+    let showarticles = [{
+        content: "正在载入中",
+        href: "#"
+    }];
+    let content = new Vue({
+        el: "#content",
+        data: {
+            articles: showarticles
+        }
+    });
+    $.ajax({
+        url: "./API/allArticle",
+        type: "GET",
+        success: function (result) {
+            while (showarticles.length != 0) {
+                showarticles.shift()
+            }
+            result = JSON.parse(result);
+            for (let i of result) {
+                loadarticles.push(i);
+                showarticles.push({content: markdown.toHTML(i.content), href: i.href});
+            }
+        }
+    });
+    let search = new Vue({
+        el: "#search",
+        data: {
+            keyword: "",
+        },
+        methods: {
+            search: function () {
+                if (search.keyword != "") {
+                    while (showarticles.length != 0) {
+                        showarticles.shift();
+                    }
+                    let re = RegExp(search.keyword);
+                    for (let i of loadarticles) {
+                        if (re.exec(i.content) != null) {
+                            showarticles.push({content: markdown.toHTML(i.content), href: i.href});
+                        }
+                    }
+                } else {
+                    while (showarticles.length != 0) {
+                        showarticles.shift();
+                    }
+                    for (let i of loadarticles) {
+                        showarticles.push({content: markdown.toHTML(i.content), href: i.href});
+                    }
+                }
+            }
+        }
+    })
+</script>
+</html>

@@ -39,15 +39,18 @@ def getArticle(id=id):
     ret = []
     try:
         if result[0][2] != 1:
-            ret.append("# 你无权查看此文章")
-            ret.append("# 你无权查看此文章")
-            return ret
+            if not verifyToken(request.cookies.get("token")) :
+                ret.append("# 你无权查看此文章")
+                ret.append("# 你无权查看此文章")
+                ret.append("# 你无权查看此文章")
+                return ret
         ret.append(result[0][0])
         ret.append(result[0][1].strftime("%Y-%m-%d"))
         ret.append(result[0][3])
     except:
-        ret.append("# 你无权查看此文章")
-        ret.append("# 你无权查看此文章")
+        ret.append("# 该文章不存在")
+        ret.append("# 该文章不存在")
+        ret.append("# 该文章不存在")
     finally:
         return json.dumps(ret)
 

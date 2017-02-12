@@ -39,7 +39,7 @@ def getArticle(id=id):
     ret = []
     try:
         if result[0][2] != 1:
-            if not verifyToken(request.cookies.get("token")) :
+            if not verifyToken(request.cookies.get("token"))[0]:
                 ret.append("# 你无权查看此文章")
                 ret.append("# 你无权查看此文章")
                 ret.append("# 你无权查看此文章")
@@ -90,7 +90,8 @@ def APIlogin():
 
 @app.route('/manage/')
 def manage():
-    if verifyToken(request.cookies.get("token")):
+    if verifyToken(request.cookies.get("token"))[0]:
+        print "HERE"
         return render_template("manage.html")
     return redirect("../login/")
 
@@ -143,7 +144,10 @@ def favicon(id=id):
 
 def verifyToken(token):
     SQLresult = db.verifyToken()
+    if token == None:
+        return False, "null"
     for i in SQLresult:
+        print i
         if token == genCookie(i[0]):
             return True, i[1]
     return False, "null"
@@ -158,4 +162,4 @@ def genCookie(passMd5):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=False,port=80)
+    app.run(host="0.0.0.0", debug=False, port=80)
